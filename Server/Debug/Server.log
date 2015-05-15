@@ -1,0 +1,26 @@
+﻿  Server.cpp
+c:\users\sharkdx\desktop\penguinbasket\common\databuffer.h(31): warning C4251: 'DataBuffer::m_data' : class 'std::vector<char,std::allocator<char>>' needs to have dll-interface to be used by clients of class 'DataBuffer'
+c:\users\sharkdx\desktop\penguinbasket\common\packetplayerconnected.h(12): warning C4251: 'PacketPlayerConnected::m_name' : class 'std::basic_string<char,std::char_traits<char>,std::allocator<char>>' needs to have dll-interface to be used by clients of class 'PacketPlayerConnected'
+  Client.cpp
+c:\users\sharkdx\desktop\penguinbasket\common\databuffer.h(31): warning C4251: 'DataBuffer::m_data' : class 'std::vector<char,std::allocator<char>>' needs to have dll-interface to be used by clients of class 'DataBuffer'
+c:\users\sharkdx\desktop\penguinbasket\common\packetplayerconnected.h(12): warning C4251: 'PacketPlayerConnected::m_name' : class 'std::basic_string<char,std::char_traits<char>,std::allocator<char>>' needs to have dll-interface to be used by clients of class 'PacketPlayerConnected'
+c:\program files (x86)\microsoft visual studio 12.0\vc\include\memory(932): warning C4244: 'argument' : conversion from 'int' to 'float', possible loss of data
+          c:\program files (x86)\microsoft visual studio 12.0\vc\include\memory(1003) : see reference to function template instantiation 'std::_Ref_count_obj<_Ty>::_Ref_count_obj<int&,int,int>(int &,int &&,int &&)' being compiled
+          with
+          [
+              _Ty=PacketSpawnPlayer
+          ]
+          c:\program files (x86)\microsoft visual studio 12.0\vc\include\memory(1003) : see reference to function template instantiation 'std::_Ref_count_obj<_Ty>::_Ref_count_obj<int&,int,int>(int &,int &&,int &&)' being compiled
+          with
+          [
+              _Ty=PacketSpawnPlayer
+          ]
+          c:\users\sharkdx\desktop\penguinbasket\server\client.cpp(99) : see reference to function template instantiation 'std::shared_ptr<PacketSpawnPlayer> std::make_shared<PacketSpawnPlayer,int&,int,int>(int &,int &&,int &&)' being compiled
+  Generating Code...
+  Compiling...
+  Map.cpp
+  Main.cpp
+c:\users\sharkdx\desktop\penguinbasket\common\databuffer.h(31): warning C4251: 'DataBuffer::m_data' : class 'std::vector<char,std::allocator<char>>' needs to have dll-interface to be used by clients of class 'DataBuffer'
+c:\users\sharkdx\desktop\penguinbasket\common\packetplayerconnected.h(12): warning C4251: 'PacketPlayerConnected::m_name' : class 'std::basic_string<char,std::char_traits<char>,std::allocator<char>>' needs to have dll-interface to be used by clients of class 'PacketPlayerConnected'
+  Generating Code...
+  Server.vcxproj -> C:\Users\SharkDX\Desktop\PenguinBasket\Debug\Server.exe

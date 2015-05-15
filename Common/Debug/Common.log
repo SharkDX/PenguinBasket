@@ -1,0 +1,27 @@
+﻿  PacketSpawnPlayer.cpp
+d:\programming\penguinbasket\common\databuffer.h(31): warning C4251: 'DataBuffer::m_data' : class 'std::vector<char,std::allocator<char>>' needs to have dll-interface to be used by clients of class 'DataBuffer'
+  PacketPlayerPosition.cpp
+d:\programming\penguinbasket\common\databuffer.h(31): warning C4251: 'DataBuffer::m_data' : class 'std::vector<char,std::allocator<char>>' needs to have dll-interface to be used by clients of class 'DataBuffer'
+  PacketPlayerConnected.cpp
+d:\programming\penguinbasket\common\databuffer.h(31): warning C4251: 'DataBuffer::m_data' : class 'std::vector<char,std::allocator<char>>' needs to have dll-interface to be used by clients of class 'DataBuffer'
+d:\programming\penguinbasket\common\packetplayerconnected.h(12): warning C4251: 'PacketPlayerConnected::m_name' : class 'std::basic_string<char,std::char_traits<char>,std::allocator<char>>' needs to have dll-interface to be used by clients of class 'PacketPlayerConnected'
+  PacketPing.cpp
+d:\programming\penguinbasket\common\databuffer.h(31): warning C4251: 'DataBuffer::m_data' : class 'std::vector<char,std::allocator<char>>' needs to have dll-interface to be used by clients of class 'DataBuffer'
+  PacketMapData.cpp
+d:\programming\penguinbasket\common\databuffer.h(31): warning C4251: 'DataBuffer::m_data' : class 'std::vector<char,std::allocator<char>>' needs to have dll-interface to be used by clients of class 'DataBuffer'
+  PacketHandshake.cpp
+d:\programming\penguinbasket\common\databuffer.h(31): warning C4251: 'DataBuffer::m_data' : class 'std::vector<char,std::allocator<char>>' needs to have dll-interface to be used by clients of class 'DataBuffer'
+  PacketDestroyBlock.cpp
+d:\programming\penguinbasket\common\databuffer.h(31): warning C4251: 'DataBuffer::m_data' : class 'std::vector<char,std::allocator<char>>' needs to have dll-interface to be used by clients of class 'DataBuffer'
+  PacketCreateBlock.cpp
+d:\programming\penguinbasket\common\databuffer.h(31): warning C4251: 'DataBuffer::m_data' : class 'std::vector<char,std::allocator<char>>' needs to have dll-interface to be used by clients of class 'DataBuffer'
+  PacketChat.cpp
+d:\programming\penguinbasket\common\databuffer.h(31): warning C4251: 'DataBuffer::m_data' : class 'std::vector<char,std::allocator<char>>' needs to have dll-interface to be used by clients of class 'DataBuffer'
+d:\programming\penguinbasket\common\packetchat.h(12): warning C4251: 'PacketChat::m_message' : class 'std::basic_string<char,std::char_traits<char>,std::allocator<char>>' needs to have dll-interface to be used by clients of class 'PacketChat'
+  Packet.cpp
+d:\programming\penguinbasket\common\databuffer.h(31): warning C4251: 'DataBuffer::m_data' : class 'std::vector<char,std::allocator<char>>' needs to have dll-interface to be used by clients of class 'DataBuffer'
+  DataBuffer.cpp
+d:\programming\penguinbasket\common\databuffer.h(31): warning C4251: 'DataBuffer::m_data' : class 'std::vector<char,std::allocator<char>>' needs to have dll-interface to be used by clients of class 'DataBuffer'
+  Generating Code...
+     Creating library D:\Programming\PenguinBasket\Debug\Common.lib and object D:\Programming\PenguinBasket\Debug\Common.exp
+  Common.vcxproj -> D:\Programming\PenguinBasket\Debug\Common.dll

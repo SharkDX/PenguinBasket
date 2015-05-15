@@ -1,0 +1,83 @@
+#include "ResourceManager.h"
+
+ResourceManager* ResourceManager::mInstance = nullptr;
+
+void ResourceManager::CreateInstance()
+{
+	if (mInstance != nullptr)
+	{
+		//TODO Throw some exception
+		return;
+	}
+
+	mInstance = new ResourceManager();
+}
+
+void ResourceManager::LoadTexture(const std::string &name)
+{
+	std::string path(TEXTURE_BASE_PATH);
+	path.append(name);
+
+	GLuint texture = SOIL_load_OGL_texture(
+		path.c_str(),
+		SOIL_LOAD_AUTO,
+		SOIL_CREATE_NEW_ID,
+		SOIL_FLAG_MIPMAPS | SOIL_FLAG_INVERT_Y | SOIL_FLAG_NTSC_SAFE_RGB | SOIL_FLAG_COMPRESS_TO_DXT
+		);
+
+	if (!texture)
+		std::cout << "Error loading texture: " << name << " Reason: " << SOIL_last_result() << std::endl;
+
+	std::stringstream s(name);
+	std::string keyName;
+	std::getline(s, keyName, '.');
+
+	mTextures[keyName] = texture;
+}
+
+void ResourceManager::LoadTextureTransparent(const std::string &name)
+{
+	std::string path(TEXTURE_BASE_PATH);
+	path.append(name);
+
+	GLuint texture = SOIL_load_OGL_texture(
+		path.c_str(),
+		SOIL_LOAD_AUTO,
+		SOIL_CREATE_NEW_ID,
+		SOIL_FLAG_MULTIPLY_ALPHA
+		);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+
+	if (!texture)
+		std::cout << "Error loading texture: " << name << " Reason: " << SOIL_last_result() << std::endl;
+
+	std::stringstream s(name);
+	std::string keyName;
+	std::getline(s, keyName, '.');
+
+	mTextures[keyName] = texture;
+}
+
+void ResourceManager::LoadShader(const std::string &vertex, const std::string &geomtry, const std::string &fragment)
+{
+	std::string vert(SHADERS_BASE_PATH);
+	vert.append(vertex);
+
+	std::string geom(SHADERS_BASE_PATH);
+	if (geomtry != "")
+		geom.append(geomtry);
+
+	std::string frag(SHADERS_BASE_PATH);
+	frag.append(fragment);
+
+	Shader* shader = new Shader(vert.c_str(), geomtry == "" ? NULL : geom.c_str(), frag.c_str());
+
+	std::stringstream s(vertex);
+	std::string keyName;
+	std::getline(s, keyName, '.');
+
+	mShaders[keyName] = shader;
+}
