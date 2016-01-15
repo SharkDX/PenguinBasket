@@ -13,7 +13,7 @@ SkyManager::SkyManager(int mapWidth)
 		clouds.push_back(cloud);
 	}
 	std::sort(clouds.begin(), clouds.end(), Cloud::comp);
-	Profiler::Time = &Time;
+	Settings::Time = &Time;
 	
 	for (int i = 0; i < rainW; i++)
 	{

@@ -1,5 +1,8 @@
 #pragma once
-class Profiler
+#include <vector>
+#include <glm/glm.hpp>
+
+class Settings
 {
 public:
 	static int DRAW_CALLS;
@@ -11,5 +14,7 @@ public:
 	static int Ping;
 	static unsigned long RamUsage;
 	static unsigned long CpuUsage;
+	static float WallLightningMultiplier;
+	static std::vector < std::pair<int, glm::vec3> > blockSpriteIndices;
 };
 

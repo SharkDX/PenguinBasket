@@ -8,7 +8,6 @@
 #include "ResourceManager.h"
 #include "Drawer.h"
 #include "Map.h"
-#include "Water.h"
 #include "HUD.h"
 #include "Client.h"
 
@@ -21,8 +20,7 @@ public:
 
 	static HUD* hud;
 	Drawer* drawer;
-	Printer* printer;
-	std::vector<Water*> waters;
+	//Printer* printer;
 
 	void Init(GLFWwindow* window);
 	void LoadResources();
@@ -31,6 +29,8 @@ public:
 	void CalculateCameraProperties();
 	void RenderClouds(Shader* shader);
 	void RenderRain(Shader* shader);
+
+	bool IsOutOfScreen(int i, int j);
 
 	static void ScrollWheelCallback(GLFWwindow* window, double x, double y);
 	static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
@@ -44,11 +44,14 @@ public:
 	static Client* m_Client;
 private:
 	static int lightMode;
-	glm::mat4x4 View;
-	glm::mat4x4 Projection;
-	glm::vec2 CameraPos;
+	static glm::mat4x4 View;
+	static glm::mat4x4 Projection;
+	static glm::vec2 CameraPos;
 	double lastShot = 0;
+	FrameBufferObject* mRenderFbo;
 	FrameBufferObject* mWaterFbo;
+	FrameBufferObject* mBlurFbo1;
+	FrameBufferObject* mBlurFbo2;
 	static int lastPing;
 };
 

@@ -34,6 +34,7 @@ public:
 	glm::vec2 pos;
 	glm::vec2 prevPos;
 	glm::vec2 vel;
+	glm::vec2 force;
 	char light;
 	Box* shape;
 	bool OnScreen = false;

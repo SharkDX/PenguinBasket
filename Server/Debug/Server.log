@@ -1,26 +1,48 @@
-﻿  Server.cpp
-c:\users\sharkdx\desktop\penguinbasket\common\databuffer.h(31): warning C4251: 'DataBuffer::m_data' : class 'std::vector<char,std::allocator<char>>' needs to have dll-interface to be used by clients of class 'DataBuffer'
-c:\users\sharkdx\desktop\penguinbasket\common\packetplayerconnected.h(12): warning C4251: 'PacketPlayerConnected::m_name' : class 'std::basic_string<char,std::char_traits<char>,std::allocator<char>>' needs to have dll-interface to be used by clients of class 'PacketPlayerConnected'
-  Client.cpp
-c:\users\sharkdx\desktop\penguinbasket\common\databuffer.h(31): warning C4251: 'DataBuffer::m_data' : class 'std::vector<char,std::allocator<char>>' needs to have dll-interface to be used by clients of class 'DataBuffer'
-c:\users\sharkdx\desktop\penguinbasket\common\packetplayerconnected.h(12): warning C4251: 'PacketPlayerConnected::m_name' : class 'std::basic_string<char,std::char_traits<char>,std::allocator<char>>' needs to have dll-interface to be used by clients of class 'PacketPlayerConnected'
-c:\program files (x86)\microsoft visual studio 12.0\vc\include\memory(932): warning C4244: 'argument' : conversion from 'int' to 'float', possible loss of data
-          c:\program files (x86)\microsoft visual studio 12.0\vc\include\memory(1003) : see reference to function template instantiation 'std::_Ref_count_obj<_Ty>::_Ref_count_obj<int&,int,int>(int &,int &&,int &&)' being compiled
-          with
-          [
-              _Ty=PacketSpawnPlayer
-          ]
-          c:\program files (x86)\microsoft visual studio 12.0\vc\include\memory(1003) : see reference to function template instantiation 'std::_Ref_count_obj<_Ty>::_Ref_count_obj<int&,int,int>(int &,int &&,int &&)' being compiled
-          with
-          [
-              _Ty=PacketSpawnPlayer
-          ]
-          c:\users\sharkdx\desktop\penguinbasket\server\client.cpp(99) : see reference to function template instantiation 'std::shared_ptr<PacketSpawnPlayer> std::make_shared<PacketSpawnPlayer,int&,int,int>(int &,int &&,int &&)' being compiled
-  Generating Code...
-  Compiling...
-  Map.cpp
-  Main.cpp
-c:\users\sharkdx\desktop\penguinbasket\common\databuffer.h(31): warning C4251: 'DataBuffer::m_data' : class 'std::vector<char,std::allocator<char>>' needs to have dll-interface to be used by clients of class 'DataBuffer'
-c:\users\sharkdx\desktop\penguinbasket\common\packetplayerconnected.h(12): warning C4251: 'PacketPlayerConnected::m_name' : class 'std::basic_string<char,std::char_traits<char>,std::allocator<char>>' needs to have dll-interface to be used by clients of class 'PacketPlayerConnected'
-  Generating Code...
-  Server.vcxproj -> C:\Users\SharkDX\Desktop\PenguinBasket\Debug\Server.exe
+﻿Build started 5/7/2015 16:27:09.
+     1>Project "D:\Programming\PenguinBasket\Server\Server.vcxproj" on node 3 (Rebuild target(s)).
+     1>ClCompile:
+         C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\CL.exe /c /I..\Common /I..\Dependencies\include /ZI /nologo /W3 /WX- /Od /Oy- /D WIN32 /D _DEBUG /D _CONSOLE /D _LIB /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"Debug\\" /Fd"Debug\vc140.pdb" /Gd /TP /analyze- /errorReport:prompt Client.cpp Entity.cpp Logger.cpp Main.cpp Map.cpp Player.cpp Server.cpp
+         Server.cpp
+     1>d:\programming\penguinbasket\common\databuffer.h(31): warning C4251: 'DataBuffer::m_data': class 'std::vector<char,std::allocator<char>>' needs to have dll-interface to be used by clients of class 'DataBuffer'
+     1>d:\programming\penguinbasket\common\packetplayerconnected.h(12): warning C4251: 'PacketPlayerConnected::m_name': class 'std::basic_string<char,std::char_traits<char>,std::allocator<char>>' needs to have dll-interface to be used by clients of class 'PacketPlayerConnected'
+     1>d:\programming\penguinbasket\common\packetchat.h(12): warning C4251: 'PacketChat::m_message': class 'std::basic_string<char,std::char_traits<char>,std::allocator<char>>' needs to have dll-interface to be used by clients of class 'PacketChat'
+         Player.cpp
+         Map.cpp
+         Main.cpp
+     1>d:\programming\penguinbasket\common\databuffer.h(31): warning C4251: 'DataBuffer::m_data': class 'std::vector<char,std::allocator<char>>' needs to have dll-interface to be used by clients of class 'DataBuffer'
+     1>d:\programming\penguinbasket\common\packetplayerconnected.h(12): warning C4251: 'PacketPlayerConnected::m_name': class 'std::basic_string<char,std::char_traits<char>,std::allocator<char>>' needs to have dll-interface to be used by clients of class 'PacketPlayerConnected'
+     1>d:\programming\penguinbasket\common\packetchat.h(12): warning C4251: 'PacketChat::m_message': class 'std::basic_string<char,std::char_traits<char>,std::allocator<char>>' needs to have dll-interface to be used by clients of class 'PacketChat'
+         Logger.cpp
+         Entity.cpp
+     1>d:\programming\penguinbasket\server\entity.cpp(23): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
+         Client.cpp
+     1>d:\programming\penguinbasket\common\databuffer.h(31): warning C4251: 'DataBuffer::m_data': class 'std::vector<char,std::allocator<char>>' needs to have dll-interface to be used by clients of class 'DataBuffer'
+     1>d:\programming\penguinbasket\common\packetplayerconnected.h(12): warning C4251: 'PacketPlayerConnected::m_name': class 'std::basic_string<char,std::char_traits<char>,std::allocator<char>>' needs to have dll-interface to be used by clients of class 'PacketPlayerConnected'
+     1>d:\programming\penguinbasket\common\packetchat.h(12): warning C4251: 'PacketChat::m_message': class 'std::basic_string<char,std::char_traits<char>,std::allocator<char>>' needs to have dll-interface to be used by clients of class 'PacketChat'
+     1>c:\program files (x86)\microsoft visual studio 14.0\vc\include\memory(907): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+         c:\program files (x86)\microsoft visual studio 14.0\vc\include\memory(977): note: see reference to function template instantiation 'std::_Ref_count_obj<_Ty>::_Ref_count_obj<int&,int,int>(int &,int &&,int &&)' being compiled
+                 with
+                 [
+                     _Ty=PacketSpawnPlayer
+                 ]
+         c:\program files (x86)\microsoft visual studio 14.0\vc\include\memory(977): note: see reference to function template instantiation 'std::_Ref_count_obj<_Ty>::_Ref_count_obj<int&,int,int>(int &,int &&,int &&)' being compiled
+                 with
+                 [
+                     _Ty=PacketSpawnPlayer
+                 ]
+         d:\programming\penguinbasket\server\client.cpp(105): note: see reference to function template instantiation 'std::shared_ptr<PacketSpawnPlayer> std::make_shared<PacketSpawnPlayer,int&,int,int>(int &,int &&,int &&)' being compiled
+         Generating Code...
+       Link:
+         C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"D:\Programming\PenguinBasket\Debug\Server.exe" /INCREMENTAL /NOLOGO /LIBPATH:..\Debug /LIBPATH:..\Dependencies\lib ws2_32.lib winmm.lib enet.lib Common.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /Debug /PDB:"D:\Programming\PenguinBasket\Debug\Server.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"D:\Programming\PenguinBasket\Debug\Server.lib" /MACHINE:X86 Debug\Client.obj
+         Debug\Entity.obj
+         Debug\Logger.obj
+         Debug\Main.obj
+         Debug\Map.obj
+         Debug\Player.obj
+         Debug\Server.obj
+         Server.vcxproj -> D:\Programming\PenguinBasket\Debug\Server.exe
+     1>Done Building Project "D:\Programming\PenguinBasket\Server\Server.vcxproj" (Rebuild target(s)).
+
+Build succeeded.
+
+Time Elapsed 00:00:05.79

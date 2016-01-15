@@ -16,6 +16,7 @@
 #include "Blocker.h"
 #include "IMap.h"
 #include "Block.h"
+#include "Water.h"
 
 class Map
 {
@@ -33,6 +34,7 @@ public:
 	bool lightDirty = false;
 
 	Player* player;
+	std::vector<Water*> waters;
 	std::vector<Entity*> entities;
 	std::vector<EntityItem*> drops;
 	std::map<int, int, Blocker*> blockers;
@@ -46,10 +48,11 @@ public:
 	~Map();
 
 	bool ValidateBlock(int i, int j) { return !(i < 0 || j < 0 || i >= Width || j >= Height); };
-	int GetBlock(int i, int j);
 	bool IsSolid(int i, int j);
+	int GetBlock(int i, int j);
 	int GetWall(int i, int j);
 	void SetBlock(int i, int j, int id);
+	void SetWall(int i, int j, int id);
 	void DestroyBlock(int i, int j);
 	bool TryBuildBlock(int i, int j, int id);
 	void UpdateBlock(int i, int j) { if(ValidateBlock(i, j)) blocks[i][j].connectionIndex = GetConnectionIndex(i, j); };

@@ -166,8 +166,42 @@ void Shader::Release()
 GLuint Shader::GetUniformLocation(std::string name)
 {
 	std::map<std::string, GLuint>::iterator it = uniforms.find(name);
-	GLuint loc = it == uniforms.end() ? -1 : it->second;
-	return loc;
+	return it == uniforms.end() ? -1 : it->second;
+}
+
+void Shader::SetUniform(GLuint loc, float value)
+{
+	glUniform1f(loc, value);
+}
+
+void Shader::SetUniform(GLuint loc, float value1, float value2)
+{
+	glUniform2f(loc, value1, value2);
+}
+
+void Shader::SetUniform(GLuint loc, float value1, float value2, float value3)
+{
+	glUniform3f(loc, value1, value2, value3);
+}
+
+void Shader::SetUniform(GLuint loc, glm::vec2 value)
+{
+	glUniform2f(loc, value.x, value.y);
+}
+
+void Shader::SetUniform(GLuint loc, glm::vec3 value)
+{
+	glUniform3f(loc, value.x, value.y, value.z);
+}
+
+void Shader::SetUniform(GLuint loc, glm::vec4 value)
+{
+	glUniform4f(loc, value.x, value.y, value.z, value.w);
+}
+
+void Shader::SetUniform(GLuint loc, glm::mat4& value)
+{
+	glUniformMatrix4fv(loc, 1, false, &value[0][0]);
 }
 
 

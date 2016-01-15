@@ -5,6 +5,9 @@ HUD* Main::hud;
 bool Main::MapReady = false;
 int Main::lastPing = 0;
 Client* Main::m_Client = nullptr;
+glm::mat4x4 Main::View;
+glm::mat4x4 Main::Projection;
+glm::vec2 Main::CameraPos;
 
 Main::Main(GLFWwindow* window)
 {
@@ -13,7 +16,7 @@ Main::Main(GLFWwindow* window)
 void Main::Init(GLFWwindow* window) {
 	m_Client = new Client();
 	m_Client->processPacketFunc = &Main::ProcessPacket;
-	//Profiler::Multiplayer = m_Client->Connect("127.0.0.1"/* "77.126.103.88" */, 1234);
+	//Settings::Multiplayer = m_Client->Connect("127.0.0.1"/* "77.126.103.88" */, 1234);
 	//m_Client->Start();
 	
 	glPushAttrib(GL_DEPTH_BUFFER_BIT | GL_LIGHTING_BIT);
@@ -25,8 +28,10 @@ void Main::Init(GLFWwindow* window) {
 
 	Projection = glm::ortho(0.0, (double) screenSize.x, (double) screenSize.y, 0.0, -1.0, 1.0);
 	View = glm::lookAt(glm::vec3(0, 0, 1), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
+	mRenderFbo = new FrameBufferObject(screenSize.x, screenSize.y);
 	mWaterFbo = new FrameBufferObject(screenSize.x, screenSize.y);
-
+	mBlurFbo1 = new FrameBufferObject(screenSize.x, screenSize.y);
+	mBlurFbo2 = new FrameBufferObject(screenSize.x, screenSize.y);
 	glfwSetScrollCallback(window, &Main::ScrollWheelCallback);
 	glfwSetKeyCallback(window, &Main::KeyCallback);
 	glfwSetCharCallback(window, &Main::CharCallback);
@@ -35,12 +40,12 @@ void Main::Init(GLFWwindow* window) {
 
 	hud = new HUD(window);
 	drawer = new Drawer();
-	printer = new Printer();
+	//printer = new Printer();
 
 	Item::InitItems();
 
 	m_Client->SendPacket(std::shared_ptr<Packet>(new PacketHandshake(PROTOCOL_VERSION, 0)));
-	if (!Profiler::Multiplayer) {
+	if (!Settings::Multiplayer) {
 		map = new Map(100, 100);
 		MapReady = true;
 	}
@@ -61,6 +66,7 @@ void Main::LoadResources() {
 	resources->LoadShader("blur.vert", "", "blur.frag");
 	resources->LoadShader("font.vert", "", "font.frag");
 	resources->LoadShader("framed.vert", "", "framed.frag");
+	resources->LoadShader("water.vert", "", "water.frag");
 
 	resources->LoadTextureTransparent("cursor.png");
 	resources->LoadTextureTransparent("circle.png");
@@ -86,7 +92,7 @@ Main::~Main()
 
 void Main::Update(GLFWwindow* window, float deltaTime)
 {
-	if (!MapReady || Profiler::Pause)
+	if (!MapReady || Settings::Pause)
 		return;	
 	map->player->isWalking = false;
 	float speed = 8.0f;
@@ -99,7 +105,7 @@ void Main::Update(GLFWwindow* window, float deltaTime)
 	if (map->player->onGround && glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
 		map->player->SetVelocityY(-6.0f);
 	}
-	if (Profiler::Multiplayer)
+	if (Settings::Multiplayer)
 	{
 		m_Client->SendPacket(std::make_shared<PacketPlayerPosition>(m_Client->clientId, map->player->pos.x, map->player->pos.y, map->player->vel.x, map->player->vel.y));
 		if (clock() - lastPing > 1000) {
@@ -118,9 +124,9 @@ void Main::Update(GLFWwindow* window, float deltaTime)
 	{
 		(*it)->Update(window, deltaTime);
 	}
-	for (std::vector<Water*>::iterator it = waters.begin(); it != waters.end(); ++it)
+	for (std::vector<Water*>::iterator it = map->waters.begin(); it != map->waters.end(); ++it)
 	{
-		(*it)->Update(window, deltaTime, waters);
+		(*it)->Update(window, deltaTime, map->waters);
 	}
 	if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
 	{
@@ -135,12 +141,13 @@ void Main::Update(GLFWwindow* window, float deltaTime)
 		{
 			map->player->inventory->UseItem(map->player->selectedSlot, xpos / BLOCK_SIZE, ypos / BLOCK_SIZE);
 			/*
-			if (Profiler::Multiplayer)
+			if (Settings::Multiplayer)
 			m_Client->SendPacket(std::make_shared<PacketCreateBlock>(item->Id, 0, (int)(xpos / BLOCK_SIZE), (int)(ypos / BLOCK_SIZE))); //TODO Send chunk position instead of constant 0
 			TODO Put m_Clients in Map.h and handle it in ItemBlock.cpp
 			*/
 		}
 	}
+
 	map->Update();
 }
 
@@ -149,7 +156,9 @@ void Main::Render()
 	glClear(GL_COLOR_BUFFER_BIT);
 	if (!MapReady)
 		return;
-
+	
+	mRenderFbo->Bind();
+	glClear(GL_COLOR_BUFFER_BIT);
 	CalculateCameraProperties();
 
 	if (map->lightDirty) {
@@ -163,9 +172,14 @@ void Main::Render()
 	arm1 += map->player->pos + glm::vec2(0.5f, 0.5f);
 	arm2 += map->player->pos + glm::vec2(0.5f, 0.5f);
 
-	Profiler::DRAW_CALLS = 0;
+	Settings::DRAW_CALLS = 0;
+	Shader* currentShader = NULL;
+
 
 	ResourceManager* resources = ResourceManager::GetInstance();
+	Shader* blurShader = resources->GetShader("blur");
+	Shader* waterShader = resources->GetShader("water");
+
 	Shader* texturedShader = resources->GetShader("textured");
 	GLuint textureLoc = texturedShader->GetUniformLocation("blockTexture");
 	GLuint posLoc = texturedShader->GetUniformLocation("blockPos");
@@ -175,6 +189,12 @@ void Main::Render()
 	GLuint lightLoc = texturedShader->GetUniformLocation("lightMap");
 	GLuint blockRenderLoc = texturedShader->GetUniformLocation("blockRender");
 	GLuint sizetexLoc = texturedShader->GetUniformLocation("size");
+
+	Shader* colored_shader = resources->GetShader("colored");
+	GLuint colored_mvp_loc = colored_shader->GetUniformLocation("MVP");
+	GLuint colored_size_loc = colored_shader->GetUniformLocation("size");
+	GLuint colored_pos_loc = colored_shader->GetUniformLocation("pos");
+
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindBuffer(GL_ARRAY_BUFFER, drawer->mVbo);
@@ -203,99 +223,86 @@ void Main::Render()
 
 	framedShader->Release();
 	
-	texturedShader->Bind();
-	posLoc = texturedShader->GetUniformLocation("blockPos");
-	mvpLoc = texturedShader->GetUniformLocation("MVP");
-	glUniformMatrix4fv(mvpLoc, 1, false, &(Projection * View)[0][0]);
-	glUniform1f(textureLoc, 0);
-	glUniformMatrix4fv(mvpLoc, 1, false, &(Projection * View)[0][0]);
-	glUniform1f(blockRenderLoc, 1.0f);
+	// ------------------------------ Walls ------------------------------
+	currentShader = texturedShader;
+	currentShader->Bind();
+	posLoc = currentShader->GetUniformLocation("blockPos");
+	mvpLoc = currentShader->GetUniformLocation("MVP");
+	GLuint blockTexture_loc = currentShader->GetUniformLocation("blockTexture");
+	GLuint blockRender_loc = currentShader->GetUniformLocation("blockRender");
+	
+	currentShader->SetUniform(mvpLoc, Projection * View);
+	currentShader->SetUniform(blockTexture_loc, 0);
+	currentShader->SetUniform(blockRender_loc, 1.0);
 	glBindTexture(GL_TEXTURE_2D, resources->GetTexture("blocks"));
+
+	int blockIndex_loc = currentShader->GetUniformLocation("blockIndex");
+	int lightMap_loc = currentShader->GetUniformLocation("lightMap");
+	int blockPos_loc = currentShader->GetUniformLocation("blockPos");
+	int spriteIndex_loc = currentShader->GetUniformLocation("spriteIndex");
+
 	for (int i = map->minX; i < map->maxX; i++)
 	{
 		for (int j = map->minY; j < map->maxY; j++)
 		{
-			if (i < (int) (CameraPos.x / BLOCK_SIZE) || j < (int) (CameraPos.y / BLOCK_SIZE) ||
-				i >(int) ((CameraPos.x + 1280) / BLOCK_SIZE) || j >(int) ((CameraPos.y + 720) / BLOCK_SIZE) ||
-				map->GetWall(i, j) == 0 || map->GetBlock(i, j) != 0)
+			// If out of screen, or no wall to draw, or there is a block on top of it, skip.
+			if (IsOutOfScreen(i, j) || map->GetWall(i, j) == 0 || map->GetBlock(i, j) != 0)
 				continue;
 			int id = map->GetWall(i, j);
-			glUniform1f(blockIndexLoc, Block::GetBlockById(id)->GetTextureCoord());
-			glUniform2f(posLoc, i * BLOCK_SIZE, j * BLOCK_SIZE);
-			glUniform1f(spriteIndexLoc, 4.0f);
-			if (lightMode == 0)
-				glUniform4f(lightLoc, map->GetAvgLight(i, j) / 2.0f, map->GetAvgLight(i + 1, j) / 2.0f, map->GetAvgLight(i, j + 1) / 2.0f, map->GetAvgLight(i + 1, j + 1) / 2.0f);
-			else if (lightMode == 1)
-				glUniform4f(lightLoc, map->GetLight(i, j) / 2.0f, map->GetLight(i, j) / 2.0f, map->GetLight(i, j) / 2.0f, map->GetLight(i, j) / 2.0f);
-			drawer->DrawBlock();
+			currentShader->SetUniform(blockIndex_loc, Block::GetBlockById(id)->GetTextureCoord());
+			currentShader->SetUniform(blockPos_loc, glm::vec2(i, j) * BLOCK_SIZEF);
+			currentShader->SetUniform(spriteIndex_loc, 4.0f);
+			currentShader->SetUniform(lightMap_loc, glm::vec4(	map->GetAvgLight(i, j),
+																map->GetAvgLight(i + 1, j),
+																map->GetAvgLight(i, j + 1),
+																map->GetAvgLight(i + 1, j + 1)) * Settings::WallLightningMultiplier);
+
+			drawer->Draw();
 		}
 	}
+
+	// ------------------------------ Wall Connectors ------------------------------
+	
+	blockIndex_loc = currentShader->GetUniformLocation("blockIndex");
+	lightMap_loc = currentShader->GetUniformLocation("lightMap");
+	blockPos_loc = currentShader->GetUniformLocation("blockPos");
+	spriteIndex_loc = currentShader->GetUniformLocation("spriteIndex");
+
 	for (int i = map->minX; i < map->maxX; i++)
 	{
 		for (int j = map->minY; j < map->maxY; j++)
 		{
-			if (i < (int) (CameraPos.x / BLOCK_SIZE) || j < (int) (CameraPos.y / BLOCK_SIZE) ||
-				i >(int) ((CameraPos.x + 1280) / BLOCK_SIZE) || j >(int) ((CameraPos.y + 720) / BLOCK_SIZE) ||
-				map->GetWall(i, j) == 0)
+			if (IsOutOfScreen(i, j) || map->GetWall(i, j) == 0 || map->GetBlock(i, j) != 0)
 				continue;
 			int id = map->GetWall(i, j);
-			glUniform1f(blockIndexLoc, Block::GetBlockById(id)->GetTextureCoord());
-			glUniform4f(lightLoc, map->GetLight(i, j) / 2.0f, map->GetLight(i, j) / 2.0f, map->GetLight(i, j) / 2.0f, map->GetLight(i, j) / 2.0f);
-			if (map->walls[i][j].connectionIndex & 1) {
-				glUniform2f(posLoc, i * BLOCK_SIZE, (j - 1) * BLOCK_SIZE);
-				glUniform1f(spriteIndexLoc, 1.0f);
-				drawer->DrawBlock();
-			}
-			if (map->walls[i][j].connectionIndex & 2) {
-				glUniform2f(posLoc, (i + 1) * BLOCK_SIZE, j * BLOCK_SIZE);
-				glUniform1f(spriteIndexLoc, 5.0f);
-				drawer->DrawBlock();
-			}
-			if (map->walls[i][j].connectionIndex & 4) {
-				glUniform2f(posLoc, i * BLOCK_SIZE, (j + 1) * BLOCK_SIZE);
-				glUniform1f(spriteIndexLoc, 7.0f);
-				drawer->DrawBlock();
-			}
-			if (map->walls[i][j].connectionIndex & 8) {
-				glUniform2f(posLoc, (i - 1) * BLOCK_SIZE, j * BLOCK_SIZE);
-				glUniform1f(spriteIndexLoc, 3.0f);
-				drawer->DrawBlock();
-			}
+			currentShader->SetUniform(blockIndex_loc, Block::GetBlockById(id)->GetTextureCoord());
+			currentShader->SetUniform(lightMap_loc, glm::vec4(map->GetAvgLight(i, j),
+				map->GetAvgLight(i + 1, j),
+				map->GetAvgLight(i, j + 1),
+				map->GetAvgLight(i + 1, j + 1)) * Settings::WallLightningMultiplier);
 
+			for (int index = 0; index < Settings::blockSpriteIndices.size(); index++)
+			{
+				auto bitSpriteIndex = Settings::blockSpriteIndices[index];
+
+				int connectionBit = bitSpriteIndex.first;
+
+				if (map->walls[i][j].connectionIndex & connectionBit) {
+					float connectionSprite = bitSpriteIndex.second.z;
+					glm::vec2 connectionPos = glm::vec2(bitSpriteIndex.second);
+
+					currentShader->SetUniform(blockPos_loc, (glm::vec2(i, j) + connectionPos) * BLOCK_SIZEF);
+					currentShader->SetUniform(spriteIndex_loc, connectionSprite);
+					drawer->Draw();
+				}
+			}
 		}
 	}
 	texturedShader->Release();
 	
-	/*Shader coloredShader = resources->GetShader("colored");
-	coloredShader->Bind();
-	mvpLoc = coloredShader->GetUniformLocation("MVP");
-	posLoc = coloredShader->GetUniformLocation("pos");
-	GLuint sizeLoc = coloredShader->GetUniformLocation("size");
-	
-
-	GLuint colorLoc = coloredShader->GetUniformLocation("inColor");
-	glUniformMatrix4fv(mvpLoc, 1, false, &(Projection * View)[0][0]);
-	for (std::vector<Entity*>::iterator it = map->entities.begin(); it != map->entities.end(); ++it)
-	{
-		if ((*it)->pos.x < map->minX || (*it)->pos.y < map->minY || (*it)->pos.x > map->maxX || (*it)->pos.y > map->maxY)
-		{
-			(*it)->OnScreen = false;
-			continue;
-		}
-		(*it)->OnScreen = true;
-		if ((*it)->animation != NULL || (map->drops.size() > 0 && typeid(*(*it)) == typeid(EntityItem)))
-			continue;
-		float light = map->GetLight((int)(*it)->shape->GetCenterX(), (int)(*it)->shape->GetCenterY());
-		glUniform4f(colorLoc, light, light, light, 1);
-		glUniform2f(posLoc, (*it)->GetPosition().x * BLOCK_SIZE, (*it)->GetPosition().y * BLOCK_SIZE);
-		glUniform2f(sizeLoc, (*it)->GetSize().x, (*it)->GetSize().y);
-		drawer->DrawBlock();
-	}
-	coloredShader->Release();*/
-	
+	// ------------------------------ Hand 1 ------------------------------
 	framedShader->Bind();
 
-	glUniformMatrix4fv(framed_mvpLoc, 1, false, &(Projection * View)[0][0]);
 	glUniform1f(framed_alphaLoc, 1);
 
 	if (map->player->hand2.x != -1)
@@ -308,31 +315,34 @@ void Main::Render()
 		glUniform1f(framed_frameLoc, 0);
 		glUniform1f(framed_lineCountLoc, 1);
 		glUniform1f(framed_totalFramesLoc, 1);
-		drawer->DrawBlock();
+		drawer->Draw();
 	}
 
+	// ------------------------------ Entities ------------------------------
+	currentShader->SetUniform(mvpLoc, Projection * View);
 	for (std::vector<Entity*>::iterator it = map->entities.begin(); it != map->entities.end(); ++it)
 	{
-		if ((*it)->pos.x < map->minX || (*it)->pos.y < map->minY || (*it)->pos.x > map->maxX || (*it)->pos.y > map->maxY)
+		Entity* entity = (*it);
+		if (entity->pos.x < map->minX || entity->pos.y < map->minY || entity->pos.x > map->maxX || entity->pos.y > map->maxY)
 		{
-			(*it)->OnScreen = false;
+			entity->OnScreen = false;
 			continue;
 		}
-		(*it)->OnScreen = true;
-		if ((*it)->animation == NULL)
+		entity->OnScreen = true;
+		if (entity->animation == NULL)
 			continue;
-		float light = map->GetLight((int) (*it)->shape->GetCenterX(), (int) (*it)->shape->GetCenterY());
+		float light = map->GetLight((int) entity->shape->GetCenterX(), (int) entity->shape->GetCenterY());
 		glUniform1f(framed_lightLoc, light);
-		glBindTexture(GL_TEXTURE_2D, resources->GetTexture((*it)->animation->texturePath));
-		glUniform2f(framed_posLoc, (int)((*it)->GetPosition().x * BLOCK_SIZE + (*it)->animation->offsetX), (int)((*it)->GetPosition().y * BLOCK_SIZE + (*it)->animation->offsetY));
+		glBindTexture(GL_TEXTURE_2D, resources->GetTexture(entity->animation->texturePath));
+		glUniform2f(framed_posLoc, (int)(entity->GetPosition().x * BLOCK_SIZE + entity->animation->offsetX), (int)(entity->GetPosition().y * BLOCK_SIZE + entity->animation->offsetY));
 		glUniform2f(framed_sizeLoc, 2.0f, 2);
-		glUniform1f(framed_frameLoc, (*it)->animation->currentFrame + (*it)->animation->currentLine * (*it)->animation->frameCount);
-		glUniform1f(framed_lineCountLoc, (*it)->animation->frameCount);
-		glUniform1f(framed_totalFramesLoc, (*it)->animation->lineCount * (*it)->animation->frameCount);
-		glUniform1f(framed_dirLoc, (*it)->direction);
-		drawer->DrawBlock();
+		glUniform1f(framed_frameLoc, entity->animation->currentFrame + entity->animation->currentLine * entity->animation->frameCount);
+		glUniform1f(framed_lineCountLoc, entity->animation->frameCount);
+		glUniform1f(framed_totalFramesLoc, entity->animation->lineCount * entity->animation->frameCount);
+		glUniform1f(framed_dirLoc, entity->direction);
+		drawer->Draw();
 	}
-
+	// ------------------------------ Block items ------------------------------
 	glBindTexture(GL_TEXTURE_2D, resources->GetTexture("blocks"));
 	glUniform1f(framed_totalFramesLoc, 16);
 	glUniform1f(framed_lineCountLoc, 16);
@@ -348,9 +358,10 @@ void Main::Render()
 		glUniform2f(framed_posLoc, (int) ((*it)->GetPosition().x * BLOCK_SIZE) - 16, (int) ((*it)->GetPosition().y * BLOCK_SIZE) - 16);
 		glUniform2f(framed_sizeLoc, 1.4, 1.4);
 		glUniform1f(framed_frameLoc, Block::GetBlockById((std::dynamic_pointer_cast<ItemBlock>((*it)->item))->blockId)->GetTextureCoord());
-		drawer->DrawBlock();
+		drawer->Draw();
 	}
 
+	// ------------------------------ Items ------------------------------
 	glBindTexture(GL_TEXTURE_2D, resources->GetTexture("Items"));
 	for (std::vector<EntityItem*>::iterator it = map->drops.begin(); it != map->drops.end(); ++it)
 	{
@@ -362,9 +373,9 @@ void Main::Render()
 		glUniform2f(framed_posLoc, (int) ((*it)->GetPosition().x * BLOCK_SIZE) - 16, (int) ((*it)->GetPosition().y * BLOCK_SIZE) - 16);
 		glUniform2f(framed_sizeLoc, 1.4, 1.4);
 		glUniform1f(framed_frameLoc, (*it)->item->textureIndex);
-		drawer->DrawBlock();
+		drawer->Draw();
 	}
-
+	// ------------------------------ Selected Slot ------------------------------
 	std::shared_ptr<Item> item = map->player->inventory->GetItem(map->player->selectedSlot);
 	if (map->player->swinging && item != nullptr && item->block == false)
 	{
@@ -374,15 +385,17 @@ void Main::Render()
 
 		glm::vec3 o = glm::vec3(0, 32, 0);
 		glm::vec3 p = glm::vec3((int) ((map->player->GetPosition().x) * BLOCK_SIZE + (map->player->direction == 1.0f ? 16 : 8)), (int) (map->player->GetPosition().y * BLOCK_SIZE), 0);
-		glUniformMatrix4fv(framed_mvpLoc, 1, false, &(Projection * View * glm::translate(p) * glm::translate(o) * glm::rotate(map->player->itemRot, glm::vec3(0, 0, 1)) * glm::translate(-o))[0][0]);
+		currentShader->SetUniform(mvpLoc, Projection * View * glm::translate(p) * glm::translate(o) * glm::rotate(map->player->itemRot, glm::vec3(0, 0, 1)) * glm::translate(-o));
 		glUniform1f(framed_lightLoc, 1);
 		//glUniform2f(framed_posLoc, (int) ((map->player->GetPosition().x) * BLOCK_SIZE + (int) (map->player->GetSize().x * BLOCK_SIZE)), (int) ((map->player->GetPosition().y) * BLOCK_SIZE));
 		glUniform2f(framed_posLoc, 0.0, 0.0);
 		glUniform2f(framed_sizeLoc, 1.0, 1.0);
 		glUniform1f(framed_frameLoc, item->textureIndex);
-		drawer->DrawBlock();
+		drawer->Draw();
 	}
+	currentShader->SetUniform(mvpLoc, Projection * View);
 	
+	// ------------------------------ Hand 2 ------------------------------
 	if (map->player->hand1.x != -1)
 	{
 		glUniformMatrix4fv(framed_mvpLoc, 1, false, &(Projection * View)[0][0]);
@@ -395,15 +408,17 @@ void Main::Render()
 		glUniform1f(framed_frameLoc, 0);
 		glUniform1f(framed_lineCountLoc, 1);
 		glUniform1f(framed_totalFramesLoc, 1);
-		drawer->DrawBlock();
+		drawer->Draw();
 	}
 	framedShader->Release();
 
-	texturedShader->Bind();
+	// ------------------------------ Blocks ------------------------------
+	currentShader = texturedShader;
+	currentShader->Bind();
 	posLoc = texturedShader->GetUniformLocation("blockPos");
-	mvpLoc = texturedShader->GetUniformLocation("MVP");
-	glUniformMatrix4fv(mvpLoc, 1, false, &(Projection * View)[0][0]);
-	glUniform1f(textureLoc, 0);
+	
+	currentShader->SetUniform(mvpLoc, Projection * View);
+	currentShader->SetUniform(blockTexture_loc, 0);
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, resources->GetTexture("blocks"));
@@ -411,28 +426,32 @@ void Main::Render()
 	{
 		for (int j = map->minY; j < map->maxY; j++)
 		{
-			if (i < (int) (CameraPos.x / BLOCK_SIZE) || j < (int) (CameraPos.y / BLOCK_SIZE) ||
-				i >(int) ((CameraPos.x + 1280) / BLOCK_SIZE) || j >(int) ((CameraPos.y + 720) / BLOCK_SIZE) ||
-				map->GetBlock(i, j) == 0)
+			if (IsOutOfScreen(i, j) || map->GetBlock(i, j) == 0)
 				continue;
 			int id = map->GetBlock(i, j);
-			glUniform1f(blockIndexLoc, Block::GetBlockById(id)->GetTextureCoord());
-			glUniform2f(posLoc, i * BLOCK_SIZE, j * BLOCK_SIZE);
-			glUniform1f(spriteIndexLoc, 4.0f);
+
+			currentShader->SetUniform(blockIndex_loc, Block::GetBlockById(id)->GetTextureCoord());
+			currentShader->SetUniform(blockPos_loc, glm::vec2(i, j) * BLOCK_SIZEF);
+			currentShader->SetUniform(spriteIndex_loc, 4.0f);
+
 			if (lightMode == 0)
-				glUniform4f(lightLoc, map->GetAvgLight(i, j), map->GetAvgLight(i + 1, j), map->GetAvgLight(i, j + 1), map->GetAvgLight(i + 1, j + 1));
+				currentShader->SetUniform(lightMap_loc, glm::vec4(map->GetAvgLight(i, j),
+					map->GetAvgLight(i + 1, j),
+					map->GetAvgLight(i, j + 1),
+					map->GetAvgLight(i + 1, j + 1)) );
 			else if (lightMode == 1)
-				glUniform4f(lightLoc, map->GetLight(i, j), map->GetLight(i, j), map->GetLight(i, j), map->GetLight(i, j));
-			drawer->DrawBlock();
+				currentShader->SetUniform(lightMap_loc, glm::vec4(map->GetLight(i, j), map->GetLight(i, j), map->GetLight(i, j), map->GetLight(i, j)));
+
+			drawer->Draw();
 		}
 	}
+
+	// ------------------------------ Block Connectors ------------------------------
 	for (int i = map->minX; i < map->maxX; i++)
 	{
 		for (int j = map->minY; j < map->maxY; j++)
 		{
-			if (i < (int) (CameraPos.x / BLOCK_SIZE) || j < (int) (CameraPos.y / BLOCK_SIZE) ||
-				i >(int) ((CameraPos.x + 1280) / BLOCK_SIZE) || j > (int)((CameraPos.y + 720) / BLOCK_SIZE) ||
-				map->GetBlock(i, j) == 0)
+			if (IsOutOfScreen(i, j) || map->GetBlock(i, j) == 0)
 				continue;
 			int id = map->GetBlock(i, j);
 			glUniform1f(blockIndexLoc, Block::GetBlockById(id)->GetTextureCoord());
@@ -446,68 +465,84 @@ void Main::Render()
 				glUniform4f(lightLoc, map->GetAvgLight(i, j - 1), map->GetAvgLight(i + 1, j - 1), map->GetAvgLight(i, j), map->GetAvgLight(i + 1, j));
 				glUniform2f(posLoc, i * BLOCK_SIZE, (j - 1) * BLOCK_SIZE);
 				glUniform1f(spriteIndexLoc, 1.0f);
-				drawer->DrawBlock();
+				drawer->Draw();
 			}
 			if (map->blocks[i][j].connectionIndex & 2) {
 				glUniform4f(lightLoc, map->GetAvgLight(i + 1, j), map->GetAvgLight(i + 2, j), map->GetAvgLight(i + 1, j + 1), map->GetAvgLight(i + 2, j + 1));
 				glUniform2f(posLoc, (i + 1) * BLOCK_SIZE, j * BLOCK_SIZE);
 				glUniform1f(spriteIndexLoc, 5.0f);
-				drawer->DrawBlock();
+				drawer->Draw();
 			}
 			if (map->blocks[i][j].connectionIndex & 4) {
 				glUniform4f(lightLoc, map->GetAvgLight(i, j + 1), map->GetAvgLight(i + 1, j + 1), map->GetAvgLight(i, j + 2), map->GetAvgLight(i + 1, j + 2));
 				glUniform2f(posLoc, i * BLOCK_SIZE, (j + 1) * BLOCK_SIZE);
 				glUniform1f(spriteIndexLoc, 7.0f);
-				drawer->DrawBlock();
+				drawer->Draw();
 			}
 			if (map->blocks[i][j].connectionIndex & 8) {
 				glUniform4f(lightLoc, map->GetAvgLight(i - 1, j), map->GetAvgLight(i, j), map->GetAvgLight(i - 1, j + 1), map->GetAvgLight(i, j + 1));
 				glUniform2f(posLoc, (i - 1) * BLOCK_SIZE, j * BLOCK_SIZE);
 				glUniform1f(spriteIndexLoc, 3.0f);
-				drawer->DrawBlock();
+				drawer->Draw();
 			}
 
 			/*if (map->blocks[i][j].connectionIndex & 16) {
 				glUniform2f(posLoc, i * BLOCK_SIZE, (j - 1) * BLOCK_SIZE);
 				glUniform1f(spriteIndexLoc, 2.0f);
-				drawer->DrawBlock();
+				drawer->Draw();
 			}
 			if (map->blocks[i][j].connectionIndex & 32) {
 				glUniform2f(posLoc, (i + 1) * BLOCK_SIZE, j * BLOCK_SIZE);
 				glUniform1f(spriteIndexLoc, 8.0f);
-				drawer->DrawBlock();
+				drawer->Draw();
 			}
 			if (map->blocks[i][j].connectionIndex & 64) {
 				glUniform2f(posLoc, i * BLOCK_SIZE, (j + 1) * BLOCK_SIZE);
 				glUniform1f(spriteIndexLoc, 6.0f);
-				drawer->DrawBlock();
+				drawer->Draw();
 			}
 			if (map->blocks[i][j].connectionIndex & 128) {
 				glUniform2f(posLoc, (i - 1) * BLOCK_SIZE, j * BLOCK_SIZE);
 				glUniform1f(spriteIndexLoc, 0.0f);
-				drawer->DrawBlock();
+				drawer->Draw();
 			}*/
 		}
 	}
 	texturedShader->Release();
+	mRenderFbo->Unbind();
 
-	hud->Render(Projection, map->player->inventory, map->player->selectedSlot, map->player->inventoryOpen, printer);
 
-	/*glUniform1f(texturedShader->GetUniformLocation("isBlock"), 0);
+	// ------------------------------ Scene Quad Render ----------------
+	blurShader->Bind();
+	mvpLoc = blurShader->GetUniformLocation("Projection");
+	textureLoc = blurShader->GetUniformLocation("textureMap");
+	blurShader->SetUniform(blurShader->GetUniformLocation("blurSize"), 0.0f);
+	glActiveTexture(GL_TEXTURE0);
+	glUniform1i(textureLoc, 0);
+	glBindTexture(GL_TEXTURE_2D, mRenderFbo->textureID);
+	glUniformMatrix4fv(mvpLoc, 1, false, &(Projection)[0][0]);
+	drawer->DrawScreen();
+	blurShader->Release();
+
+	// ------------------------------ Water Render ----------------
+	texturedShader->Bind();
+	texturedShader->SetUniform(mvpLoc, Projection * View);
+
+	glUniform1f(texturedShader->GetUniformLocation("blockRender"), 0);
+	glUniform2f(texturedShader->GetUniformLocation("size"), 1.0, 1.0f);
 	glBindTexture(GL_TEXTURE_2D, resources->GetTexture("circle"));
-	mWaterFbo->Bind();
+	mBlurFbo1->Bind();
 	glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
-	for (std::vector<Water*>::iterator it = waters.begin(); it != waters.end(); ++it)
+	for (std::vector<Water*>::iterator it = map->waters.begin(); it != map->waters.end(); ++it)
 	{
 		glUniform2f(posLoc, (*it)->GetPosition().x * BLOCK_SIZE, (*it)->GetPosition().y * BLOCK_SIZE);
-		glUniform1f(spriteIndexLoc, 0);
-		//(*it)->Render();
-		drawer->DrawBlock(0, 0, 0);
+		drawer->Draw();
 	}
 	glClearColor(0.4f, 0.6f, 1.0f, 1.0f);
-	mWaterFbo->Unbind();
-	texturedShader->Release();*/
+	mBlurFbo1->Unbind();
+	glUniform1f(texturedShader->GetUniformLocation("blockRender"),1.0f);
+	texturedShader->Release();
 
 	/*Shader* fontShader = resources->GetShader("font");
 	fontShader->Bind();
@@ -516,23 +551,60 @@ void Main::Render()
 	glUniform1f(fontShader->GetUniformLocation("tex"), 0);
 	glActiveTexture(GL_TEXTURE0);
 
-	printer->render_text(std::string("FPS: ").append(std::to_string(Profiler::FPS)).c_str(), 0, 100);
+	printer->render_text(std::string("FPS: ").append(std::to_string(Settings::FPS)).c_str(), 0, 100);
 	
 	fontShader->Release();*/
 
-	/*Shader* blurShader = resources->GetShader("blur");
+
+	// ------------------------------ Blurred Water Render ----------------
+	bool first_fbo = false;
+	FrameBufferObject* current_fbo = mBlurFbo1;
+	FrameBufferObject* next_fbo = mBlurFbo2;
 	blurShader->Bind();
+	blurShader->SetUniform(blurShader->GetUniformLocation("blurSize"), 2.0f);
+	for (int i = 0; i < 3; i++)
+	{
+		current_fbo = first_fbo ? mBlurFbo1 : mBlurFbo2;
+		next_fbo = first_fbo ? mBlurFbo2 : mBlurFbo1;
+		first_fbo = !first_fbo;
 
-	mvpLoc = blurShader->GetUniformLocation("Projection");
-	textureLoc = blurShader->GetUniformLocation("textureMap");
+		current_fbo->Bind();
+		glClearColor(1.0f, 0.0f, 1.0f, 0.0f);
+		glClear(GL_COLOR_BUFFER_BIT);
+		mvpLoc = blurShader->GetUniformLocation("Projection");
+		textureLoc = blurShader->GetUniformLocation("textureMap");
+		glActiveTexture(GL_TEXTURE0);
+		glUniform1f(textureLoc, 0.0f);
+		glBindTexture(GL_TEXTURE_2D, next_fbo->textureID);
+		glUniformMatrix4fv(mvpLoc, 1, false, &(Projection)[0][0]);
+		drawer->DrawScreen();
+		glClearColor(0.4f, 0.6f, 1.0f, 1.0f);
+		current_fbo->Unbind();
+	}
+	blurShader->Release();
 
-	glUniform1f(textureLoc, 0);
+	// ------------------------------ Postprocessed Water Render ----------------
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, mRenderFbo->textureID);
+	
+	glActiveTexture(GL_TEXTURE0 + 1);
+	glBindTexture(GL_TEXTURE_2D, current_fbo->textureID);
+
+	waterShader->Bind();
+	mvpLoc = waterShader->GetUniformLocation("Projection");
+	textureLoc = waterShader->GetUniformLocation("textureMap");
+	GLuint maskLoc = waterShader->GetUniformLocation("maskMap");
+
+	glUniform1i(textureLoc, 0);
+	glUniform1i(maskLoc, 1);
+
 	glUniformMatrix4fv(mvpLoc, 1, false, &(Projection)[0][0]);
-	glBindTexture(GL_TEXTURE_2D, mWaterFbo->textureID);
-
 	drawer->DrawScreen();
+	waterShader->Release();
 
-	blurShader->Release();*/
+
+	// ------------------------------ HUD ------------------------------
+	hud->Render(Projection, map->player->inventory, map->player->selectedSlot, map->player->inventoryOpen);//, printer);
 }
 
 void Main::CalculateCameraProperties()
@@ -585,7 +657,7 @@ void Main::RenderClouds(Shader* shader)
 		glUniform1f(framed_frameLoc, (*it)->type);
 		glUniform2f(framed_posLoc, (*it)->pos.x * BLOCK_SIZE, (*it)->pos.y * BLOCK_SIZE);
 		glUniform2f(framed_sizeLoc, (*it)->size.x, (*it)->size.y);
-		drawer->DrawBlock();
+		drawer->Draw();
 	}
 }
 
@@ -616,8 +688,16 @@ void Main::RenderRain(Shader* shader)
 		glUniform1f(framed_frameLoc, 0);
 		glUniform2f(framed_posLoc, ceil((CameraPos.x - map->skyManager->rain[i]->pos.x) / 1280.0f) * 1280.0f + map->skyManager->rain[i]->pos.x, ceil((CameraPos.y - map->skyManager->rain[i]->pos.y) / 720.0f) * 720.0f + map->skyManager->rain[i]->pos.y);
 		glUniform2f(framed_sizeLoc, 8.0f / 32.0f, 16.0f / 32.0f);
-		drawer->DrawBlock();
+		drawer->Draw();
 	}
+}
+
+bool Main::IsOutOfScreen(int i, int j)
+{
+	return (i < (int)(CameraPos.x / BLOCK_SIZE)
+		|| j < (int)(CameraPos.y / BLOCK_SIZE)
+		|| i >(int) ((CameraPos.x + 1280) / BLOCK_SIZE)
+		|| j >(int)((CameraPos.y + 720) / BLOCK_SIZE));
 }
 
 void Main::ScrollWheelCallback(GLFWwindow* window, double x, double y)
@@ -655,7 +735,7 @@ void Main::KeyCallback(GLFWwindow* window, int key, int scancode, int action, in
 		map->player->selectedSlot = key == GLFW_KEY_0 ? 9 : key - GLFW_KEY_1;
 	}
 
-	if (Profiler::Pause == false && key == GLFW_KEY_SPACE && action == GLFW_PRESS && map->player->jumpCount > 0)
+	if (Settings::Pause == false && key == GLFW_KEY_SPACE && action == GLFW_PRESS && map->player->jumpCount > 0)
 	{
 		map->player->SetVelocityY(-6.0f);
 		map->player->jumpCount--;
@@ -705,6 +785,19 @@ void Main::MouseButtonCallback(GLFWwindow* window, int button, int action, int b
 	{
 		map->player->swinging = false;
 		map->player->itemRot = -45;
+	}
+	if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS)
+	{
+		double xpos;
+		double ypos;
+		glfwGetCursorPos(window, &xpos, &ypos);
+		xpos += CameraPos.x;
+		ypos += CameraPos.y;
+
+		Water* water = new Water();
+		water->SetPosition(glm::vec2(xpos / BLOCK_SIZE - water->GetSize().x / 2.0f, ypos / BLOCK_SIZE - water->GetSize().y / 2.0f));
+		map->waters.push_back(water);
+		map->entities.push_back(water);
 	}
 }
 
@@ -795,7 +888,7 @@ void Main::ProcessPacket(ENetPacket* packet, ENetPeer* peer)
 		break;
 	case PACKET_PING:
 	{
-		Profiler::Ping = clock() - lastPing;
+		Settings::Ping = clock() - lastPing;
 	}
 		break;
 	case PACKET_CREATE_BLOCK:

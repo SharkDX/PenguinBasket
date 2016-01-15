@@ -1,8 +1,9 @@
 #pragma once
 #define BLOCK_SIZE 32
+#define BLOCK_SIZEF (float)32
 #include <GL\glew.h>
 #include <vector>
-#include "Profiler.h"
+#include "Settings.h"
 
 class Drawer
 {
@@ -34,19 +35,25 @@ public:
 	void DrawRectangle(double x, double y, double width, double height)
 	{
 		glDrawArrays(GL_TRIANGLES, 0, 6);
-		Profiler::DRAW_CALLS++;
+		Settings::DRAW_CALLS++;
 	}
 
 	void DrawBlock()
 	{
 		glDrawArrays(GL_TRIANGLES, 0, 6);
-		Profiler::DRAW_CALLS++;
+		Settings::DRAW_CALLS++;
+	}
+
+	void Draw()
+	{
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+		Settings::DRAW_CALLS++;
 	}
 
 	void DrawScreen()
 	{
 		glDrawArrays(GL_TRIANGLES, 0, 6);
-		Profiler::DRAW_CALLS++;
+		Settings::DRAW_CALLS++;
 	}
 
 	int next_p2(int a)

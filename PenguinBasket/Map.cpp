@@ -28,7 +28,7 @@ Map::Map(const int width, const int height, char* mapData)
 		blocks[i] = new Tile[Height];
 	}
 
-	if (!Profiler::Multiplayer)
+	if (!Settings::Multiplayer)
 	{
 
 		for (int i = 0; i < Width; i++) {
@@ -49,13 +49,13 @@ Map::Map(const int width, const int height, char* mapData)
 		printf("World tiles fill: %d ms. \n", clock() - start);
 		start = clock();
 
-		for (int i = 0; i < 0; i++)
-			CelluarAuto(Height, i);
+		/*for (int i = 0; i < 0; i++)
+			CelluarAuto(Height, i);*/
 
 		printf("Celluar Auto: %d ms. \n", clock() - start);
 		start = clock();
 
-		/*int k = 0;
+		int k = 0;
 		while (k < 100)
 		{
 			int i = rand() % Width;
@@ -63,7 +63,7 @@ Map::Map(const int width, const int height, char* mapData)
 			if (GetBlock(i, j) == 0)
 				continue;
 			k += GenerateVein(i, j, Block::Stone->Id, 5);
-		}*/
+		}
 
 		printf("Veins generation: %d ms. \n", (clock() - start));
 	}
@@ -117,6 +117,31 @@ Map::Map(const int width, const int height, char* mapData)
 	player = new Player();
 	Respawn();
 	entities.push_back(player);
+
+	int water_count = 3;
+	int water_x = (int)player->GetPosition().x;
+	int water_y = GetTop(water_x);
+	for (int i = water_x - 2; i < water_x + 2; i++)
+	{
+		for (int j = water_y; j < water_y + 2; j++)
+		{
+			SetBlock(i, j, 0);
+			SetWall(i, j, 0);
+			for (int k = 0; k < water_count; k++)
+			{
+				for (int l = 0; l < water_count; l++)
+				{
+					Water* water = new Water();
+					water->SetPosition(glm::vec2(i + k * (1 / (float)water_count), j + l * (1 / (float)water_count)));
+					waters.push_back(water);
+					entities.push_back(water);
+				}
+			}
+		}
+	}
+	
+
+
 
 	skyManager = new SkyManager(this->Width);
 }
@@ -241,6 +266,21 @@ void Map::SetBlock(int i, int j, int id)
 		blocks[i][j].hardness = block->GetHardness();
 		UpdateBlock(i, j);
 	}
+	UpdateNearBlocks(i, j);
+	lightDirty = true;
+}
+
+void Map::SetWall(int i, int j, int id)
+{
+	if (GetWall(i, j) == id || !ValidateBlock(i, j))
+		return;
+	walls[i][j].Id = id;
+	if (id == 0)
+	{
+		if (blocks[i][j].Id == 0)
+			blocks[i][j].lightSource = MAX_LIGHT;
+	}
+	UpdateBlock(i, j);
 	UpdateNearBlocks(i, j);
 	lightDirty = true;
 }
@@ -385,7 +425,7 @@ void Map::CelluarAuto(int minlevel, int it)
 {
 	for (int i = 0; i < Width; i++) {
 		for (int j = Height - minlevel; j < Height; j++) {
-			blocks[i][j].Id = NearLive(i, j, 1) > 4 ? 3 : 0;
+			blocks[i][j].Id = NearLive(i, j, 1) > 4 ? 2 : 0;
 		}
 	}
 }
@@ -404,7 +444,7 @@ int Map::NearLive(int i, int j, int size)
 
 int Map::GenerateVein(int i, int j, int id, int size)
 {
-	if (size == 0 || GetBlock(i, j) != 3)
+	if (size == 0 || GetBlock(i, j) != 2)
 		return 0;
 	int l = 1;
 	blocks[i][j].Id = id;

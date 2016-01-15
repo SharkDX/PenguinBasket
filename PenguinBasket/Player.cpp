@@ -27,8 +27,8 @@ void Player::Update(GLFWwindow* window, double deltaTime)
 	if (swinging)
 	{
 		float rot = (itemRot - 45.0f) * 3.14f / 180.0f;
-		hand1 = glm::vec2(cos(rot), sin(rot)) * 0.5f;
-		hand2 = glm::vec2(cos(rot), sin(rot)) * 0.5f;
+		hand1 = glm::vec2(cos(rot), sin(rot)) * 0.2f;
+		hand2 = glm::vec2(cos(rot), sin(rot)) * 0.2f;
 	}
 	Entity::Update(window, deltaTime);
 	animation->Update();

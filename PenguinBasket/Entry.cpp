@@ -34,7 +34,8 @@ int main()
 
 	glewExperimental = true;
 	glewInit();
-#ifdef _WIN32
+
+	#ifdef _WIN32
 	// Turn on vertical screen sync under Windows.
 	// (I.e. it uses the WGL_EXT_swap_control extension)
 	typedef BOOL(WINAPI *PFNWGLSWAPINTERVALEXTPROC)(int interval);
@@ -42,7 +43,8 @@ int main()
 	wglSwapIntervalEXT = (PFNWGLSWAPINTERVALEXTPROC) wglGetProcAddress("wglSwapIntervalEXT");
 	if (wglSwapIntervalEXT)
 		wglSwapIntervalEXT(1);
-#endif
+	#endif
+
 	unsigned int start = clock();
 	Main* main = new Main(window);
 	printf("Total init time: %d ms. \n", clock() - start);
@@ -62,8 +64,9 @@ int main()
 		lastUpdate = glfwGetTime();
 		if (glfwGetTime() - lastFrame >= 1.0)
 		{
-			Profiler::FPS = frames;
-			Profiler::RamUsage = ComputerResourcesHelper::GetRamUsage();
+			Settings::FPS = frames;
+			Settings::RamUsage = ComputerResourcesHelper::GetRamUsage();
+			printf("FPS: %d\n", frames);
 			lastFrame = glfwGetTime();
 			frames = 0;
 		}
@@ -79,7 +82,7 @@ int main()
 
 	glfwTerminate();
 
-	if (Profiler::Multiplayer) {
+	if (Settings::Multiplayer) {
 		if (main->m_Client != NULL)
 			main->m_Client->Disconnect();
 		enet_deinitialize();

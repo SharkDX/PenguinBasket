@@ -2,7 +2,7 @@
 #include <GLFW\glfw3.h>
 #include "Cloud.h"
 #include <vector>
-#include "Profiler.h"
+#include "Settings.h"
 #include <algorithm>
 #include <time.h>
 

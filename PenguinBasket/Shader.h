@@ -6,6 +6,8 @@
 #include <vector>
 #include <string>
 #include <assert.h>
+#include "glm/glm.hpp"
+
 
 
 class Shader
@@ -18,6 +20,14 @@ public:
 	void Release();
 	GLuint GetUniformLocation(std::string name);
 	GLuint GetProgram() { return mProgram; };
+
+	void SetUniform(GLuint loc, float value);
+	void SetUniform(GLuint loc, float value1, float value2);
+	void SetUniform(GLuint loc, float value1, float value2, float value3);
+	void SetUniform(GLuint loc, glm::vec2 value);
+	void SetUniform(GLuint loc, glm::vec3 value);
+	void SetUniform(GLuint loc, glm::vec4 value);
+	void SetUniform(GLuint loc, glm::mat4& value);
 
 private:
 	GLuint mProgram;

@@ -1,4 +1,5 @@
 #pragma once
+#include <iterator>
 typedef void(*CommandCallback)(std::string command, std::vector<std::string> args);
 
 class Chat
@@ -24,8 +25,8 @@ public:
 		if (text[0] == '/')
 		{
 			std::istringstream iss(text);
-			std::vector<std::string> tokens{ std::istream_iterator<std::string>{iss},
-				std::istream_iterator<std::string>{} };
+			
+			std::vector<std::string> tokens = std::vector<std::string>{ std::istream_iterator<std::string>{iss}, std::istream_iterator<std::string>{} };
 			if (text.size() <= 1 || tokens.size() < 1)
 				return;
 			std::string cmd = tokens[0].substr(1, tokens[0].size() - 1);
@@ -47,7 +48,7 @@ public:
 	void EnterPressed(CommandCallback callback)
 	{
 		open = !open;
-		Profiler::Pause = open;
+		Settings::Pause = open;
 		if (!open && newLine.size() > 0)
 		{
 			Say(newLine, glm::vec3(), callback);

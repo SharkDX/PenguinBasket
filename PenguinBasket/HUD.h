@@ -1,7 +1,7 @@
 #pragma once
 #include "ResourceManager.h"
 #include "Inventory.h"
-#include "Printer.h"
+
 #include "Chat.h"
 
 class HUD
@@ -47,7 +47,7 @@ public:
 		glfwGetWindowSize(window, &ScreenWidth, &ScreenHeight);
 	}
 
-	void Render(glm::mat4 mvp, Inventory* inventory, int selectedSlot, bool inventoryOpen, Printer* printer)
+	void Render(glm::mat4 mvp, Inventory* inventory, int selectedSlot, bool inventoryOpen)//, Printer* printer)
 	{
 		ResourceManager* resources = ResourceManager::GetInstance();
 		Shader* framedShader = resources->GetShader("framed");
@@ -160,13 +160,13 @@ public:
 			int index = slotItem->Id;
 			float posx = winX + (i % 10) * (slotSize + space) + slotSize / 2 - 24;
 			float posy = (i / 10) * (slotSize + space) + slotSize / 2 - 24;
-			printer->render_text(std::to_string(slotItem->stack).c_str(), posx + 8, posy + slotSize - 16, 14);
+			//printer->render_text(std::to_string(slotItem->stack).c_str(), posx + 8, posy + slotSize - 16, 14);
 		}
 
 		glUniform4f(fontShader->GetUniformLocation("color"), 0, 0, 0, 1);
-		printer->render_text(std::string("FPS: ").append(std::to_string(Profiler::FPS)).c_str(), 0, 70);
-		printer->render_text(std::string("Ping: ").append(std::to_string(Profiler::Ping)).append(" ms.").c_str(), 0, 100);
-		printer->render_text(std::string("RAM: ").append(std::to_string(Profiler::RamUsage / 1000000)).append(" MB.").c_str(), 0, 130);
+		/*printer->render_text(std::string("FPS: ").append(std::to_string(Settings::FPS)).c_str(), 0, 70);
+		printer->render_text(std::string("Ping: ").append(std::to_string(Settings::Ping)).append(" ms.").c_str(), 0, 100);
+		printer->render_text(std::string("RAM: ").append(std::to_string(Settings::RamUsage / 1000000)).append(" MB.").c_str(), 0, 130);*/
 
 		//Render Chat
 		glm::vec3 color = glm::vec3();
@@ -176,17 +176,17 @@ public:
 				color = chat->linesColor[i];
 				glUniform4f(fontShader->GetUniformLocation("color"), color.r, color.g, color.b, 1);
 			}
-			printer->render_text(chat->lines[i].c_str(), 0, 130 + (9 - i) * 20, 20);
+			//printer->render_text(chat->lines[i].c_str(), 0, 130 + (9 - i) * 20, 20);
 		}
 		glUniform4f(fontShader->GetUniformLocation("color"), 0, 0, 0, 1);
 		if (chat->open)
-			printer->render_text(chat->newLine.c_str(), 0, 130 + 10 * 20, 20);
+			//printer->render_text(chat->newLine.c_str(), 0, 130 + 10 * 20, 20);
 
 		//Render Cursor
 		if (chat->open && clock() / 500 % 2 == 0) {
 			std::string s;
 			s.append(chat->newLine.c_str(), chat->pointer);
-			printer->render_text("|", printer->measure_text(s.c_str(), 20) - (s.size() > 0 ? 3 : 0), 130 + 10 * 20, 20);
+			//printer->render_text("|", printer->measure_text(s.c_str(), 20) - (s.size() > 0 ? 3 : 0), 130 + 10 * 20, 20);
 		}
 
 		fontShader->Release();
@@ -200,8 +200,8 @@ public:
 	std::string GetTimeString(double time)
 	{
 		std::string str;
-		std::string hours = std::to_string((int) *Profiler::Time);
-		std::string mins = std::to_string((int) ((*Profiler::Time - (int) *Profiler::Time) * 60));
+		std::string hours = std::to_string((int) *Settings::Time);
+		std::string mins = std::to_string((int) ((*Settings::Time - (int) *Settings::Time) * 60));
 		str.append((hours.size() > 1 ? "" : "0")).append(hours).append(":").append((mins.size() > 1 ? "" : "0")).append(mins);
 		return str;
 	}

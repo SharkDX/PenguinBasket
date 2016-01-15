@@ -22,6 +22,8 @@ Entity::~Entity()
 
 void Entity::Update(GLFWwindow* window, double deltaTime)
 {
+	vel += force;
+	force = glm::vec2();
 	prevPos = pos;
 	pos += vel * (float)deltaTime;
 	if (Collidable)

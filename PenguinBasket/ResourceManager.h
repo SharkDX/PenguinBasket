@@ -1,7 +1,7 @@
 #pragma once
 
 #include <string>
-#include <hash_map>
+#include <unordered_map>
 #include <iostream>
 #include <sstream>
 #include <GL/glew.h>
@@ -30,8 +30,8 @@ public:
 private:
 	ResourceManager() { };
 
-	std::hash_map<std::string, GLuint> mTextures;
-	std::hash_map<std::string, Shader*> mShaders;
+	std::unordered_map<std::string, GLuint> mTextures;
+	std::unordered_map<std::string, Shader*> mShaders;
 
 	static ResourceManager* mInstance;
 };
