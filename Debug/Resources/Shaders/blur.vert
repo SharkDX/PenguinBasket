@@ -9,7 +9,7 @@ out vec2 UV;
 
 void main()
 {
-	vec2 pos = position / 16.0f * vec2(1280, 720);
+	vec2 pos = position / 32.0f * vec2(1280, 720);
     gl_Position =  Projection * vec4(pos.x, 720 - pos.y, 0.0f, 1.0f);
 	UV = texcoord;
 }

@@ -598,6 +598,7 @@ void Main::Render()
 	glUniform1i(textureLoc, 0);
 	glUniform1i(maskLoc, 1);
 
+	waterShader->SetUniform(waterShader->GetUniformLocation("globalTime"), glfwGetTime());
 	glUniformMatrix4fv(mvpLoc, 1, false, &(Projection)[0][0]);
 	drawer->DrawScreen();
 	waterShader->Release();
