@@ -1,16 +1,8 @@
-﻿Build started 1/25/2016 8:03:49 PM.
+﻿Build started 1/28/2016 12:10:20 AM.
      1>Project "D:\Programming\PenguinBasket\PenguinBasket\PenguinBasket.vcxproj" on node 2 (Build target(s)).
      1>ClCompile:
-         C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\CL.exe /c /I..\Common /I..\Dependencies\include\bullet /I..\Dependencies\include /ZI /nologo /W3 /WX- /sdl /Od /Oy- /D GLEW_STATIC /D WIN32 /D _DEBUG /D _CONSOLE /D _LIB /D _MBCS /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"Debug\\" /Fd"Debug\vc140.pdb" /Gd /TP /wd4244 /wd4099 /analyze- /errorReport:prompt Main.cpp
-         Main.cpp
-     1>c:\program files (x86)\windows kits\8.1\include\shared\minwindef.h(130): warning C4005: 'APIENTRY': macro redefinition
-         d:\programming\penguinbasket\dependencies\include\glfw\glfw3.h(92): note: see previous definition of 'APIENTRY'
-     1>d:\programming\penguinbasket\common\databuffer.h(31): warning C4251: 'DataBuffer::m_data': class 'std::vector<char,std::allocator<char>>' needs to have dll-interface to be used by clients of class 'DataBuffer'
-     1>d:\programming\penguinbasket\common\packetplayerconnected.h(12): warning C4251: 'PacketPlayerConnected::m_name': class 'std::basic_string<char,std::char_traits<char>,std::allocator<char>>' needs to have dll-interface to be used by clients of class 'PacketPlayerConnected'
-     1>d:\programming\penguinbasket\common\packetchat.h(12): warning C4251: 'PacketChat::m_message': class 'std::basic_string<char,std::char_traits<char>,std::allocator<char>>' needs to have dll-interface to be used by clients of class 'PacketChat'
-     1>d:\programming\penguinbasket\penguinbasket\main.cpp(284): warning C4018: '<': signed/unsigned mismatch
-     1>d:\programming\penguinbasket\penguinbasket\main.cpp(359): warning C4305: 'argument': truncation from 'double' to 'GLfloat'
-     1>d:\programming\penguinbasket\penguinbasket\main.cpp(374): warning C4305: 'argument': truncation from 'double' to 'GLfloat'
+         C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\CL.exe /c /I..\Common /I..\Dependencies\include\bullet /I..\Dependencies\include /ZI /nologo /W3 /WX- /sdl /Od /Oy- /D GLEW_STATIC /D WIN32 /D _DEBUG /D _CONSOLE /D _LIB /D _MBCS /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"Debug\\" /Fd"Debug\vc140.pdb" /Gd /TP /wd4244 /wd4099 /analyze- /errorReport:prompt Water.cpp
+         Water.cpp
        Link:
          C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"D:\Programming\PenguinBasket\Debug\PenguinBasket.exe" /INCREMENTAL /NOLOGO /LIBPATH:..\Debug /LIBPATH:..\Dependencies\lib opengl32.lib glfw3.lib glew32sd.lib SOIL.lib Box2D.lib libnoise.lib enet.lib ws2_32.lib winmm.lib Common.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /Debug /PDB:"D:\Programming\PenguinBasket\Debug\PenguinBasket.pdb" /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"D:\Programming\PenguinBasket\Debug\PenguinBasket.lib" /MACHINE:X86 Debug\Block.obj
          Debug\Client.obj
@@ -35,4 +27,4 @@
 
 Build succeeded.
 
-Time Elapsed 00:00:03.74
+Time Elapsed 00:00:00.78

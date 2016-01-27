@@ -12,16 +12,10 @@ void main()
 {
 
 	vec4 total = vec4(0,0,0,0);
-	
-	/*for(int i = 0; i < 5; i++) {
-		total += texture(textureMap, UV + blurType * blurSize * i, 2.0) * weight[i];
-		if(i != 0)
-			total += texture(textureMap, UV - blurType * pixelSize * blurSize * i, 2.0) * weight[i];
-	}*/
 	int counter = 0;
 	for (int i = -1; i <= 1; i++) {
 		for(int j = -1; j <= 1; j++) {
-			total += texture(textureMap, UV - vec2(i, j) * pixelSize * blurSize);
+			total += texture(textureMap, UV + vec2(i, j) * pixelSize * blurSize);
 			++counter;
 		}
 	}

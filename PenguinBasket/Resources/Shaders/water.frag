@@ -87,6 +87,6 @@ void main()
 
 		vec2 distortedCoords = UV + vec2(noiseX, noiseY) * pixelSize.x * distortionSize;
 		color = texture(textureMap, distortedCoords);
-		color.rgb /= 2.0f;
+		color.rgb = color.rgb * 0.6f + vec3(0.2f, 0.4f, 0.8f) * 0.3f;
 	}
 }

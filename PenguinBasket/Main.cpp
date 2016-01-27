@@ -195,13 +195,11 @@ void Main::Render()
 	GLuint colored_size_loc = colored_shader->GetUniformLocation("size");
 	GLuint colored_pos_loc = colored_shader->GetUniformLocation("pos");
 
-
 	glActiveTexture(GL_TEXTURE0);
-	glBindBuffer(GL_ARRAY_BUFFER, drawer->mVbo);
 	glEnableVertexAttribArray(0);
 	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 16, (void*) 0);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 16, (void*) 8);
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 16, (void*)0);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 16, (void*)8);
 	
 	Shader* framedShader = resources->GetShader("framed");
 	framedShader->Bind();
@@ -257,7 +255,7 @@ void Main::Render()
 																map->GetAvgLight(i, j + 1),
 																map->GetAvgLight(i + 1, j + 1)) * Settings::WallLightningMultiplier);
 
-			drawer->Draw();
+			drawer->DrawBlock();
 		}
 	}
 
@@ -293,7 +291,7 @@ void Main::Render()
 
 					currentShader->SetUniform(blockPos_loc, (glm::vec2(i, j) + connectionPos) * BLOCK_SIZEF);
 					currentShader->SetUniform(spriteIndex_loc, connectionSprite);
-					drawer->Draw();
+					drawer->DrawBlock();
 				}
 			}
 		}
@@ -315,7 +313,7 @@ void Main::Render()
 		glUniform1f(framed_frameLoc, 0);
 		glUniform1f(framed_lineCountLoc, 1);
 		glUniform1f(framed_totalFramesLoc, 1);
-		drawer->Draw();
+		drawer->DrawBlock();
 	}
 
 	// ------------------------------ Entities ------------------------------
@@ -340,7 +338,7 @@ void Main::Render()
 		glUniform1f(framed_lineCountLoc, entity->animation->frameCount);
 		glUniform1f(framed_totalFramesLoc, entity->animation->lineCount * entity->animation->frameCount);
 		glUniform1f(framed_dirLoc, entity->direction);
-		drawer->Draw();
+		drawer->DrawBlock();
 	}
 	// ------------------------------ Block items ------------------------------
 	glBindTexture(GL_TEXTURE_2D, resources->GetTexture("blocks"));
@@ -355,10 +353,10 @@ void Main::Render()
 		float light = map->GetLight((int) (*it)->shape->GetCenterX(), (int) (*it)->shape->GetCenterY());
 
 		glUniform1f(framed_lightLoc, light);
-		glUniform2f(framed_posLoc, (int) ((*it)->GetPosition().x * BLOCK_SIZE) - 16, (int) ((*it)->GetPosition().y * BLOCK_SIZE) - 16);
+		glUniform2f(framed_posLoc, (int) ((*it)->GetPosition().x * BLOCK_SIZE) - BLOCK_SIZE / 2.0f, (int) ((*it)->GetPosition().y * BLOCK_SIZE) - BLOCK_SIZE / 2.0f);
 		glUniform2f(framed_sizeLoc, 1.4, 1.4);
 		glUniform1f(framed_frameLoc, Block::GetBlockById((std::dynamic_pointer_cast<ItemBlock>((*it)->item))->blockId)->GetTextureCoord());
-		drawer->Draw();
+		drawer->DrawBlock();
 	}
 
 	// ------------------------------ Items ------------------------------
@@ -370,10 +368,10 @@ void Main::Render()
 		float light = map->GetLight((int) (*it)->shape->GetCenterX(), (int) (*it)->shape->GetCenterY());
 
 		glUniform1f(framed_lightLoc, light);
-		glUniform2f(framed_posLoc, (int) ((*it)->GetPosition().x * BLOCK_SIZE) - 16, (int) ((*it)->GetPosition().y * BLOCK_SIZE) - 16);
+		glUniform2f(framed_posLoc, (int) ((*it)->GetPosition().x * BLOCK_SIZE) - BLOCK_SIZE / 2.0f, (int) ((*it)->GetPosition().y * BLOCK_SIZE) - BLOCK_SIZE / 2.0f);
 		glUniform2f(framed_sizeLoc, 1.4, 1.4);
 		glUniform1f(framed_frameLoc, (*it)->item->textureIndex);
-		drawer->Draw();
+		drawer->DrawBlock();
 	}
 	// ------------------------------ Selected Slot ------------------------------
 	std::shared_ptr<Item> item = map->player->inventory->GetItem(map->player->selectedSlot);
@@ -391,7 +389,7 @@ void Main::Render()
 		glUniform2f(framed_posLoc, 0.0, 0.0);
 		glUniform2f(framed_sizeLoc, 1.0, 1.0);
 		glUniform1f(framed_frameLoc, item->textureIndex);
-		drawer->Draw();
+		drawer->DrawBlock();
 	}
 	currentShader->SetUniform(mvpLoc, Projection * View);
 	
@@ -408,7 +406,7 @@ void Main::Render()
 		glUniform1f(framed_frameLoc, 0);
 		glUniform1f(framed_lineCountLoc, 1);
 		glUniform1f(framed_totalFramesLoc, 1);
-		drawer->Draw();
+		drawer->DrawBlock();
 	}
 	framedShader->Release();
 
@@ -442,7 +440,7 @@ void Main::Render()
 			else if (lightMode == 1)
 				currentShader->SetUniform(lightMap_loc, glm::vec4(map->GetLight(i, j), map->GetLight(i, j), map->GetLight(i, j), map->GetLight(i, j)));
 
-			drawer->Draw();
+			drawer->DrawBlock();
 		}
 	}
 
@@ -465,25 +463,25 @@ void Main::Render()
 				glUniform4f(lightLoc, map->GetAvgLight(i, j - 1), map->GetAvgLight(i + 1, j - 1), map->GetAvgLight(i, j), map->GetAvgLight(i + 1, j));
 				glUniform2f(posLoc, i * BLOCK_SIZE, (j - 1) * BLOCK_SIZE);
 				glUniform1f(spriteIndexLoc, 1.0f);
-				drawer->Draw();
+				drawer->DrawBlock();
 			}
 			if (map->blocks[i][j].connectionIndex & 2) {
 				glUniform4f(lightLoc, map->GetAvgLight(i + 1, j), map->GetAvgLight(i + 2, j), map->GetAvgLight(i + 1, j + 1), map->GetAvgLight(i + 2, j + 1));
 				glUniform2f(posLoc, (i + 1) * BLOCK_SIZE, j * BLOCK_SIZE);
 				glUniform1f(spriteIndexLoc, 5.0f);
-				drawer->Draw();
+				drawer->DrawBlock();
 			}
 			if (map->blocks[i][j].connectionIndex & 4) {
 				glUniform4f(lightLoc, map->GetAvgLight(i, j + 1), map->GetAvgLight(i + 1, j + 1), map->GetAvgLight(i, j + 2), map->GetAvgLight(i + 1, j + 2));
 				glUniform2f(posLoc, i * BLOCK_SIZE, (j + 1) * BLOCK_SIZE);
 				glUniform1f(spriteIndexLoc, 7.0f);
-				drawer->Draw();
+				drawer->DrawBlock();
 			}
 			if (map->blocks[i][j].connectionIndex & 8) {
 				glUniform4f(lightLoc, map->GetAvgLight(i - 1, j), map->GetAvgLight(i, j), map->GetAvgLight(i - 1, j + 1), map->GetAvgLight(i, j + 1));
 				glUniform2f(posLoc, (i - 1) * BLOCK_SIZE, j * BLOCK_SIZE);
 				glUniform1f(spriteIndexLoc, 3.0f);
-				drawer->Draw();
+				drawer->DrawBlock();
 			}
 
 			/*if (map->blocks[i][j].connectionIndex & 16) {
@@ -531,19 +529,20 @@ void Main::Render()
 	glUniform1f(texturedShader->GetUniformLocation("blockRender"), 0);
 	glUniform2f(texturedShader->GetUniformLocation("size"), 1.0, 1.0f);
 	glBindTexture(GL_TEXTURE_2D, resources->GetTexture("circle"));
+	posLoc = currentShader->GetUniformLocation("blockPos");
 	mBlurFbo1->Bind();
 	glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 	for (std::vector<Water*>::iterator it = map->waters.begin(); it != map->waters.end(); ++it)
 	{
 		glUniform2f(posLoc, (*it)->GetPosition().x * BLOCK_SIZE, (*it)->GetPosition().y * BLOCK_SIZE);
-		drawer->Draw();
+		drawer->DrawBlock();
 	}
 	glClearColor(0.4f, 0.6f, 1.0f, 1.0f);
 	mBlurFbo1->Unbind();
 	glUniform1f(texturedShader->GetUniformLocation("blockRender"),1.0f);
 	texturedShader->Release();
-
+	
 	/*Shader* fontShader = resources->GetShader("font");
 	fontShader->Bind();
 
@@ -658,7 +657,7 @@ void Main::RenderClouds(Shader* shader)
 		glUniform1f(framed_frameLoc, (*it)->type);
 		glUniform2f(framed_posLoc, (*it)->pos.x * BLOCK_SIZE, (*it)->pos.y * BLOCK_SIZE);
 		glUniform2f(framed_sizeLoc, (*it)->size.x, (*it)->size.y);
-		drawer->Draw();
+		drawer->DrawBlock();
 	}
 }
 
@@ -689,7 +688,7 @@ void Main::RenderRain(Shader* shader)
 		glUniform1f(framed_frameLoc, 0);
 		glUniform2f(framed_posLoc, ceil((CameraPos.x - map->skyManager->rain[i]->pos.x) / 1280.0f) * 1280.0f + map->skyManager->rain[i]->pos.x, ceil((CameraPos.y - map->skyManager->rain[i]->pos.y) / 720.0f) * 720.0f + map->skyManager->rain[i]->pos.y);
 		glUniform2f(framed_sizeLoc, 8.0f / 32.0f, 16.0f / 32.0f);
-		drawer->Draw();
+		drawer->DrawBlock();
 	}
 }
 

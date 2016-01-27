@@ -16,7 +16,7 @@ out float light;
 
 void main()
 {
-    gl_Position =  MVP * vec4(blockPos + (blockRender != 1 ? position * size : position), 0.0, 1.0f);
+    gl_Position =  MVP * vec4(blockPos + position, 0.0, 1.0f);
 	UV = blockRender != 1 ? texcoord : vec2((blockIndex * 3 + (int(spriteIndex) % 3) + texcoord.x) / 48.0, (int(spriteIndex / 3) + texcoord.y) / 3.0);
 	light = blockRender != 1 ? 1.0f : lightMap[int((position.x / 32.0) + (position.y / 32.0) * 2)];
 }

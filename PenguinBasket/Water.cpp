@@ -2,7 +2,7 @@
 
 Water::Water() : Entity()
 {
-	shape->SetSize(0.5f, 0.5f);
+	shape->SetSize(1.0, 1.0);
 }
 void Water::Update(GLFWwindow* window, double deltaTime, std::vector<Water*> waters)
 {
