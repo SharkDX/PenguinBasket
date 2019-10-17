@@ -100,12 +100,16 @@ bool Shader::LoadFromFile(const char *pathVertex, const char *pathGeometry, cons
 
 	GLint Result;
 	GLint InfoLogLength;
+	std::vector<char> VertexShaderErrorMessage;
 
 	glGetShaderiv(mVertexShaderObj, GL_COMPILE_STATUS, &Result);
 	glGetShaderiv(mVertexShaderObj, GL_INFO_LOG_LENGTH, &InfoLogLength);
-	std::vector<char> VertexShaderErrorMessage(InfoLogLength);
-	glGetShaderInfoLog(mVertexShaderObj, InfoLogLength, NULL, &VertexShaderErrorMessage[0]);
-	fprintf(stdout, "%s\n", &VertexShaderErrorMessage[0]);
+	if (InfoLogLength > 0)
+	{
+		VertexShaderErrorMessage = std::vector<char>(InfoLogLength);
+		glGetShaderInfoLog(mVertexShaderObj, InfoLogLength, NULL, &VertexShaderErrorMessage[0]);
+		fprintf(stdout, "%s\n", &VertexShaderErrorMessage[0]);
+	}
 
 	if (pathGeometry){
 		glCompileShader(mGeometryShaderObj);
@@ -118,10 +122,12 @@ bool Shader::LoadFromFile(const char *pathVertex, const char *pathGeometry, cons
 	glCompileShader(mFragmentShaderObj);
 	glGetShaderiv(mFragmentShaderObj, GL_COMPILE_STATUS, &Result);
 	glGetShaderiv(mFragmentShaderObj, GL_INFO_LOG_LENGTH, &InfoLogLength);
-	VertexShaderErrorMessage = std::vector<char>(InfoLogLength);
-	glGetShaderInfoLog(mFragmentShaderObj, InfoLogLength, NULL, &VertexShaderErrorMessage[0]);
-	fprintf(stdout, "%s\n", &VertexShaderErrorMessage[0]);
-
+	if (InfoLogLength > 0)
+	{
+		VertexShaderErrorMessage = std::vector<char>(InfoLogLength);
+		glGetShaderInfoLog(mFragmentShaderObj, InfoLogLength, NULL, &VertexShaderErrorMessage[0]);
+		fprintf(stdout, "%s\n", &VertexShaderErrorMessage[0]);
+	}
 	glAttachShader(mProgram, mVertexShaderObj);
 	if (pathGeometry)
 		glAttachShader(mProgram, mGeometryShaderObj);
